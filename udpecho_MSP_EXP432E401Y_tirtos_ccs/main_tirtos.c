@@ -46,8 +46,8 @@ extern void ti_ndk_config_Global_startupFxn();
 Globals Glo = {
                .ver = "12.7.1",
                .author = "Nathan Bartley",
-               .partners = "Shailendra Shrestha, Emilio Cervantez",
-               .assignment = "HW11",
+               .partners = "Shailendra Shrestha, Emilio Cervantez, Mark Dannemiller",
+               .assignment = "HW13",
                //helpful globals
                .home ="\033[H",
                .clear = "\033[2J",

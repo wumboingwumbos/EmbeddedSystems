@@ -55,10 +55,17 @@
 #define MAX_CALLBACKS 3
 #define LUTSIZE 256
 #define DATABLOCKSIZE 128
-extern GateSwi_Handle gateSwi0, gateSwi1, gateSwi2;
+extern GateSwi_Handle gateSwi0, gateSwi1, gateSwi2, gateSwi3;
+
+#define NetQueueLen 32
+#define NetQueueSize 320
+#define REG_DIAL1 0
+#define REG_DIAL2 1
+#define DEFAULTPORT 1000
 
 extern Semaphore_Handle semaphore0;
 extern Semaphore_Handle semaphore1;
+extern Semaphore_Handle semaphore2;
 extern Task_Handle task0; //UART_Thread
 extern Task_Handle task1; //Payload Thread
 extern Task_Handle task2; //Task AAA
@@ -119,6 +126,14 @@ typedef struct TXBufControl{
     uint16_t TX_Ping[DATABLOCKSIZE];
     uint16_t TX_Pong[DATABLOCKSIZE];
 } TXBufControl;
+typedef struct NetOutQ{
+    int32_t payloadWriting, payloadReading;
+    char    payloads[NetQueueLen][NetQueueSize];
+    int32_t binaryCount[320];
+} NetOutQ;
+typedef struct Discoveries{
+    uint32_t IP_address;
+} Discoveries;
 /* Structure for Globals */
 typedef struct {
     //about glos
@@ -152,6 +167,10 @@ typedef struct {
     ADCBuf        ADCBuf;
     TXBufControl  TXBufCtrl[2];
     Bios Bios;
+    NetOutQ       NetOutQ;
+    Discoveries   Discoveries[32];
+    uint32_t      Multicast;
+    int32_t       GlobTail;
 } Globals;
 typedef struct{
     int count;
@@ -239,4 +258,5 @@ void MPaudio();
 void ADCBufCallback(ADCBuf_Handle handle, ADCBuf_Conversion *conversion, void *buffer, uint32_t channel, int_fast16_t status); // ADCBuf callback
 void AudioTask();
 void VoiceParse(char *ch);
+void ParseNetUDP(char *ch, int32_t binaryCount);
 #endif  // End of PH001_H_

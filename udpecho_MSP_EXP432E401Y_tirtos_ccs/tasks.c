@@ -130,9 +130,13 @@ void TaskAAA() {
     GPIO_enableInt(CONFIG_GPIO_6);
     GPIO_enableInt(CONFIG_GPIO_7);
     char message[64] = "\0";
-    sprintf(message, "%s%s\t\t\r\n-----------RESET------------\r\n",Glo.clear,Glo.home);
+    sprintf(message, "%s%s- - - - - - - - - - -WELCOME TO HELL- - - - - - - - - "
+            "-\r\n",Glo.clear,Glo.home);
     UART_write(uart, message, strlen(message));
-    //MPabout(NULL);
+    MPabout(NULL);
+    sprintf(message, "- - - - - - - - - - - - - - - - -"
+            " - - - - - - - - - - - \r\n");
+    UART_write(uart, message, strlen(message));
 
     Task_exit();  // Terminate TaskAAA
 }

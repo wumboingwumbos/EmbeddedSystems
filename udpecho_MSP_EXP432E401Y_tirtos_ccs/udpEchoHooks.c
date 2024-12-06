@@ -162,13 +162,11 @@ void serviceReport(uint32_t item, uint32_t status, uint32_t report, void *h)
 //    Display_printf(display, 0, 0, "Service Status: %-9s: %-9s: %-9s: %03d\n",
 //            taskName[item - 1], statusStr[status], reportStr[report / 256],
 //            report & 0xFF);
-
     sprintf(message, "-print Service Status: %-9s: %-9s: %-9s: %03d\r\n",
             taskName[item - 1], statusStr[status], reportStr[report / 256],
             report & 0xFF);
     enqueueMessage(message);
     //UART_write(uart, message, strlen(message));
-
     /* report common system issues */
     if ((item == CFGITEM_SERVICE_DHCPCLIENT) &&
             (status == CIS_SRV_STATUS_ENABLED) &&
