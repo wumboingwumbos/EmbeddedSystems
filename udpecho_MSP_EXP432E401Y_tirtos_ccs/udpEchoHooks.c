@@ -56,9 +56,8 @@
 #define UDPHANDLERSTACK 4096
 #define IFPRI  4   /* Ethernet interface priority */
 
-/* Prototypes */
-//extern Display_Handle display;
-extern void *echoFxn(void *arg0);
+extern void *ListenFxn(void *arg0);
+extern void *TransmitFxn(void *arg0);
 
 /*
  *  ======== netIPAddrHook ========
@@ -134,8 +133,13 @@ void netIPAddrHook(uint32_t IPAddr, unsigned int IfIdx, unsigned int fAdd)
 //                    "netIPAddrHook: pthread_attr_setstacksize() failed\n");
             while (1);
         }
-
-        retc = pthread_create(&thread, &attrs, echoFxn, (void *)&arg0);
+        retc = pthread_create(&thread, &attrs, ListenFxn/*Keep Listening*/, (void *)&arg0);
+                if (retc != 0) {
+//                    sprintf(MsgBuffer, "netIPAddrHook: pthread_create() failed");
+//                    AddPayload(MsgBuffer);
+                    while (1);
+        }
+        retc = pthread_create(&thread, &attrs, TransmitFxn, (void *)&arg0);
         if (retc != 0) {
 //            Display_printf(display, 0, 0,
 //                    "netIPAddrHook: pthread_create() failed\n");

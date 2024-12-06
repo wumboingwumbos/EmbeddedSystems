@@ -1,5 +1,20 @@
 #include "ph001.h"
 
+/* BSD support */
+//#include <netinet/in.h>
+//#include <arpa/inet.h>
+//#include <sys/socket.h>
+//#include <sys/select.h>
+//#include <netdb.h>
+
+#include <ti/ndk/inc/netmain.h>
+
+#include <ti/ndk/slnetif/slnetifndk.h>
+#include <ti/net/slnet.h>
+#include <ti/net/slnetif.h>
+#include <ti/net/slnetutils.h>
+
+
 
 //;;;;;;;;;;;;;;;;;;;;;;;;MP Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1872,39 +1887,30 @@ void ClearAudioBuffers(){
     }
 }
 
+
 void MPNetUDP(char *ch, int32_t binaryCount) {
     char *StrBuffPTR;
     int32_t payloadnext;
     uint32_t gateKey;
 
-    // If ch is non-NULL, we can directly use it.
-    // The reference code used NextSubString() to skip the initial command, but here
-    // ch should already point to the full string that includes "-netudp ..." etc.
     if (ch != NULL) {
         StrBuffPTR = ch;
     } else {
-        enqueueMessage("-print ParseNetUDP: null input");
+        enqueueMessage("-print MPNetUDP: null input");
         return;
     }
 
-    // Protect the queue operation with a gate (like NetworkGate in the reference)
-    gateKey = GateSwi_enter(gateSwi3); // Use one of your defined gates
-
+    gateKey = GateSwi_enter(gateSwi3);
     payloadnext = Glo.NetOutQ.payloadWriting + 1;
     if (payloadnext >= NetQueueLen)
         payloadnext = 0;
 
     if (payloadnext == Glo.NetOutQ.payloadReading) {
-        // Queue is full
         GateSwi_leave(gateSwi3, gateKey);
         enqueueMessage("-print Network Queue Overflow");
         return;
     }
 
-    // Copy the entire command plus binary data into the queue.
-    // The reference code does: strlen(StrBuffPTR) + binaryCount + 1
-    // Ensure that StrBuffPTR points to the start of the "-netudp ..." string.
-    // binaryCount is the number of binary bytes appended at the end of the string.
     memcpy(Glo.NetOutQ.payloads[Glo.NetOutQ.payloadWriting],
            StrBuffPTR,
            strlen(StrBuffPTR) + binaryCount + 1);
@@ -1914,7 +1920,101 @@ void MPNetUDP(char *ch, int32_t binaryCount) {
 
     GateSwi_leave(gateSwi3, gateKey);
 
-    // Post the semaphore to signal a network task that new data is available
-    Semaphore_post(semaphore2); // Use the semaphore chosen for network operations
+    // Notify transmit task
+    Semaphore_post(semaphore2);
 }
+
+void MPDial(char *input) {
+    char buffer[BUFFER_SIZE];
+    char *loc = getnextstring(input, true);
+
+    if (!loc) {
+        enqueueMessage("-print Usage: -dial 0 | -dial 1 <ip> | -dial 2 <ip> | -dial <ip>");
+        return;
+    }
+
+    // Check if the first argument after -dial is '0', '1', or '2'
+    int dialMode = -1; // -1 means no mode specified (ip only)
+    char *ipArg = NULL;
+
+    if (loc[0] == '0') {
+        // -dial 0: Clear both registers and stop streaming
+        Glo.regs[REG_DIAL1].value = 0;
+        Glo.regs[REG_DIAL2].value = 0;
+        enqueueMessage("-print DIAL set to 0. Streaming stopped.");
+        enqueueMessage("-stream 0");
+        return;
+    } else if (loc[0] == '1') {
+        dialMode = 1;
+        ipArg = getnextstring(loc, true);
+        if (!ipArg) {
+            enqueueMessage("-print Usage: -dial 1 <ip_address[:port]>");
+            return;
+        }
+    } else if (loc[0] == '2') {
+        dialMode = 2;
+        ipArg = getnextstring(loc, true);
+        if (!ipArg) {
+            enqueueMessage("-print Usage: -dial 2 <ip_address[:port]>");
+            return;
+        }
+    } else {
+        // No '0', '1', or '2' directly after -dial, so treat loc as IP
+        dialMode = 1; // default to register 1
+        ipArg = loc;
+    }
+
+    // Now we have:
+    // dialMode == 1 or 2 means set REG_DIAL1 or REG_DIAL2
+    // ipArg is the IP address argument to parse.
+
+    // Check if port specified
+    char *colon_ptr = strchr(ipArg, ':');
+    char modifiedArg[BUFFER_SIZE];
+
+    if (!colon_ptr) {
+        // No ':' found, append default port ":1000"
+        if (strlen(ipArg) + 6 >= BUFFER_SIZE) {
+            enqueueMessage("-print Error: IP address too long.");
+            return;
+        }
+        snprintf(modifiedArg, sizeof(modifiedArg), "%s:%d", ipArg, DEFAULTPORT);
+    }
+
+    // Prepend "-netudp " because UDPParse expects it
+    const char *addr_to_parse = (colon_ptr ? ipArg : modifiedArg);
+    char netudpLine[BUFFER_SIZE];
+    snprintf(netudpLine, sizeof(netudpLine), "-netudp %s", addr_to_parse);
+
+    struct sockaddr_in clientAddr;
+    memset(&clientAddr, 0, sizeof(clientAddr));
+
+    char *remain = UDPParse(netudpLine, &clientAddr, true);
+    if (!remain) {
+        enqueueMessage("-print Incorrect IP format. Usage: -dial 0 | -dial 1 <ip> | -dial 2 <ip> | -dial <ip>");
+        return;
+    }
+
+    uint32_t ip_host_order = NDK_ntohl(clientAddr.sin_addr.s_addr);
+    uint16_t port_host_order = NDK_ntohs(clientAddr.sin_port);
+
+    // Set the chosen register
+    if (dialMode == 1) {
+        Glo.regs[REG_DIAL1].value = ip_host_order;
+    } else if (dialMode == 2) {
+        Glo.regs[REG_DIAL2].value = ip_host_order;
+    }
+
+    snprintf(buffer, sizeof(buffer), "-print DIAL set to %d.%d.%d.%d:%d",
+            (uint8_t)((ip_host_order >> 24) & 0xFF),
+            (uint8_t)((ip_host_order >> 16) & 0xFF),
+            (uint8_t)((ip_host_order >> 8) & 0xFF),
+            (uint8_t)(ip_host_order & 0xFF),
+            (int)port_host_order);
+    enqueueMessage(buffer);
+
+    // Start streaming if not zero mode
+    enqueueMessage("-stream 1");
+}
+
 

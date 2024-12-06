@@ -138,8 +138,8 @@ typedef struct Discoveries{
 
 typedef struct{
     int32_t value;
-} Register;
 
+} Register;
 /* Structure for Globals */
 typedef struct {
     //about glos
@@ -261,4 +261,9 @@ void ADCBufCallback(ADCBuf_Handle handle, ADCBuf_Conversion *conversion, void *b
 void AudioTask();
 void VoiceParse(char *ch);
 void ParseNetUDP(char *ch, int32_t binaryCount);
+void MPDial(char *input);
+
+
+void *TransmitFxn(void *arg0);
+void *ListenFxn(void *arg0);
 #endif  // End of PH001_H_

@@ -62,6 +62,12 @@ void process_command(const char* input) {
     }else if (matchsub("-netudp",input)==true){
         MPNetUDP(input,0);
     }
+    else if (matchsub("-dial", input) == true) {
+        MPDial(input);
+    }
+    else if (matchsub("-voice", input) == true) {
+        // Do nothing at all
+    }
 
     // Error if doesn't match commands
     else {
