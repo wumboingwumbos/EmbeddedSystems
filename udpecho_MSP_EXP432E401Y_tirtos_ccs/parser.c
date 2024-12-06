@@ -680,7 +680,7 @@ void MPReg(char *input) {
         sprintf(buffer, "Registers (Decimal, Hex):\r\n");
         UART_write(uart, buffer, strlen(buffer));
         for (i = 0; i < reg_count; i++) {
-            sprintf(buffer,"REG %2d: %3d (0x%08X)\r\n", i, regs[i].value, regs[i].value);
+            sprintf(buffer,"REG %2d: %3d (0x%08X)\r\n", i, Glo.regs[i].value, Glo.regs[i].value);
             UART_write(uart, buffer, strlen(buffer));
         }
         return;
@@ -699,30 +699,30 @@ void MPReg(char *input) {
     loc = getnextstring(loc, true);
     if (!loc) {
         //memset(buffer, 0, buffer_size);
-        sprintf(buffer, "REG %2d: %3d (0x%08X)\r\n", regIndex, regs[regIndex].value, regs[regIndex].value);
+        sprintf(buffer, "REG %2d: %3d (0x%08X)\r\n", regIndex, Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
         return;
     }
 
     // Handle INC, DEC, NEG, NOT (Unchanged)
     if (matchsub("INC", loc)) {
-        regs[regIndex].value++;
-        sprintf(buffer, "INC Register %d Value: %d (0x%08X)\r\n", regIndex, regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value++;
+        sprintf(buffer, "INC Register %d Value: %d (0x%08X)\r\n", regIndex, Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
         return;
     } else if (matchsub("DEC", loc)) {
-        regs[regIndex].value--;
-        sprintf(buffer, "DEC Register %d Value: %d (0x%08X)\r\n", regIndex, regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value--;
+        sprintf(buffer, "DEC Register %d Value: %d (0x%08X)\r\n", regIndex, Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
         return;
     } else if (matchsub("NEG", loc)) {
-        regs[regIndex].value = -regs[regIndex].value;
-        sprintf(buffer, "NEG Register %d Value: %d (0x%08X)\r\n", regIndex, regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = -Glo.regs[regIndex].value;
+        sprintf(buffer, "NEG Register %d Value: %d (0x%08X)\r\n", regIndex, Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
         return;
     } else if (matchsub("NOT", loc)) {
-        regs[regIndex].value = ~regs[regIndex].value;
-        sprintf(buffer, "NOT Register %d Value: %d (0x%08X)\r\n", regIndex, regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = ~Glo.regs[regIndex].value;
+        sprintf(buffer, "NOT Register %d Value: %d (0x%08X)\r\n", regIndex, Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
         return;
     }
@@ -795,7 +795,7 @@ void MPReg(char *input) {
         regA = atoi(loc1 + 1);  // Convert to int after confirming it's numeric
 
         if (regA >= 0 && regA < reg_count) {
-            uint32_t address = regs[regA].value;
+            uint32_t address = Glo.regs[regA].value;
 
             // Check for valid address and memory alignment
             if ((address >= VALID_MIN_ADDRESS && address <= VALID_MAX_ADDRESS) ||
@@ -843,8 +843,8 @@ void MPReg(char *input) {
 
     // Handle MOV and other operations with regA or immediateA (unchanged)
     if (matchsub("MOV", loc) && loc1 != 0) {
-        regs[regIndex].value = isRegAImmediate ? immediateA : regs[regA].value;
-        sprintf(buffer, "MOV Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = isRegAImmediate ? immediateA : Glo.regs[regA].value;
+        sprintf(buffer, "MOV Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
         return;
     }
@@ -916,7 +916,7 @@ void MPReg(char *input) {
         regB = atoi(loc2 + 1);  // Convert to int after confirming it's numeric
 
         if (regB >= 0 && regB < reg_count) {
-            uint32_t address = regs[regB].value;
+            uint32_t address = Glo.regs[regB].value;
 
             // Check for valid address and memory alignment
             if ((address >= VALID_MIN_ADDRESS && address <= VALID_MAX_ADDRESS) ||
@@ -962,41 +962,41 @@ void MPReg(char *input) {
     }
     // Determine the operation and perform it
     if (matchsub("ADD", loc)) {
-        regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) +
-                               (isRegBImmediate ? immediateB : regs[regB].value);
-        sprintf(buffer, "ADD Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) +
+                               (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+        sprintf(buffer, "ADD Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
 
     } else if (matchsub("SUB", loc)) {
-        regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) -
-                               (isRegBImmediate ? immediateB : regs[regB].value);
-        sprintf(buffer, "SUB Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) -
+                               (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+        sprintf(buffer, "SUB Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
     } else if (matchsub("AND", loc)) {
-        regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) &
-                               (isRegBImmediate ? immediateB : regs[regB].value);
-        sprintf(buffer, "AND Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) &
+                               (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+        sprintf(buffer, "AND Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
     } else if (matchsub("IOR", loc)) {
-        regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) |
-                               (isRegBImmediate ? immediateB : regs[regB].value);
-        sprintf(buffer, "IOR Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) |
+                               (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+        sprintf(buffer, "IOR Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
     } else if (matchsub("XOR", loc)) {
-        regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) ^
-                               (isRegBImmediate ? immediateB : regs[regB].value);
-        sprintf(buffer, "XOR Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) ^
+                               (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+        sprintf(buffer, "XOR Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
     } else if (matchsub("MUL", loc)) {
-        regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) *
-                               (isRegBImmediate ? immediateB : regs[regB].value);
-        sprintf(buffer, "MUL Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) *
+                               (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+        sprintf(buffer, "MUL Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
     } else if (matchsub("DIV", loc)) {
-        if ((isRegBImmediate ? immediateB : regs[regB].value) != 0) {
-            regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) /
-                                   (isRegBImmediate ? immediateB : regs[regB].value);
-            sprintf(buffer, "DIV Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        if ((isRegBImmediate ? immediateB : Glo.regs[regB].value) != 0) {
+            Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) /
+                                   (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+            sprintf(buffer, "DIV Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
             UART_write(uart, buffer, strlen(buffer));
         } else {
             sprintf(buffer, "ERROR: Division by zero\r\n");
@@ -1004,10 +1004,10 @@ void MPReg(char *input) {
             Glo.re++;
         }
     } else if (matchsub("REM", loc)) {
-        if ((isRegBImmediate ? immediateB : regs[regB].value) != 0) {
-            regs[regIndex].value = (isRegAImmediate ? immediateA : regs[regA].value) %
-                                   (isRegBImmediate ? immediateB : regs[regB].value);
-            sprintf(buffer, "REM Result: %d (0x%08X)\r\n", regs[regIndex].value, regs[regIndex].value);
+        if ((isRegBImmediate ? immediateB : Glo.regs[regB].value) != 0) {
+            Glo.regs[regIndex].value = (isRegAImmediate ? immediateA : Glo.regs[regA].value) %
+                                   (isRegBImmediate ? immediateB : Glo.regs[regB].value);
+            sprintf(buffer, "REM Result: %d (0x%08X)\r\n", Glo.regs[regIndex].value, Glo.regs[regIndex].value);
             UART_write(uart, buffer, strlen(buffer));
         } else {
             sprintf(buffer, "ERROR: Division by zero\r\n");
@@ -1015,12 +1015,12 @@ void MPReg(char *input) {
             Glo.re++;
         }
     } else if (matchsub("MAX", loc)) {
-        regs[regIndex].value = (regs[regA].value > regs[regB].value) ? regs[regA].value : regs[regB].value;
-        sprintf(buffer, "MAX Result: %d\r\n", regs[regIndex].value);
+        Glo.regs[regIndex].value = (Glo.regs[regA].value > Glo.regs[regB].value) ? Glo.regs[regA].value : Glo.regs[regB].value;
+        sprintf(buffer, "MAX Result: %d\r\n", Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
     } else if (matchsub("MIN", loc)) {
-        regs[regIndex].value = (regs[regA].value < regs[regB].value) ? regs[regA].value : regs[regB].value;
-        sprintf(buffer, "MIN Result: %d\r\n", regs[regIndex].value);
+        Glo.regs[regIndex].value = (Glo.regs[regA].value < Glo.regs[regB].value) ? Glo.regs[regA].value : Glo.regs[regB].value;
+        sprintf(buffer, "MIN Result: %d\r\n", Glo.regs[regIndex].value);
         UART_write(uart, buffer, strlen(buffer));
     } else {
         sprintf(buffer, "ERROR: Invalid Operation\r\n");
@@ -1441,7 +1441,7 @@ void MPIf(char *input) {
             UART_write(uart, buffer, strlen(buffer));
             return;
         }
-        valA = regs[regA].value;  // Get value from register
+        valA = Glo.regs[regA].value;  // Get value from register
     }
 
     // Parse condition operator (COND)
@@ -1470,7 +1470,7 @@ void MPIf(char *input) {
             UART_write(uart, buffer, strlen(buffer));
             return;
         }
-        valB = regs[regB].value;  // Get value from register
+        valB = Glo.regs[regB].value;  // Get value from register
     }
 
     // Evaluate condition
@@ -1745,8 +1745,8 @@ void SWI_Right(){ //FOR RIGHT BUTTON
 // Preload all registers with initial values
 void initialize_registers() {
     int i;
-    for (i = 0; i < reg_count; i++) {
-        regs[i].value = i * 4;  // Set reg[0] = 0, reg[1] = 10, ..., reg[31] = 310
+    for (i = 2; i < reg_count; i++) {
+        Glo.regs[i].value = i * 4;  // Set reg[0] = 0, reg[1] = 10, ..., reg[31] = 310
     }
 }
 
@@ -1871,3 +1871,50 @@ void ClearAudioBuffers(){
         }
     }
 }
+
+void MPNetUDP(char *ch, int32_t binaryCount) {
+    char *StrBuffPTR;
+    int32_t payloadnext;
+    uint32_t gateKey;
+
+    // If ch is non-NULL, we can directly use it.
+    // The reference code used NextSubString() to skip the initial command, but here
+    // ch should already point to the full string that includes "-netudp ..." etc.
+    if (ch != NULL) {
+        StrBuffPTR = ch;
+    } else {
+        enqueueMessage("-print ParseNetUDP: null input");
+        return;
+    }
+
+    // Protect the queue operation with a gate (like NetworkGate in the reference)
+    gateKey = GateSwi_enter(gateSwi3); // Use one of your defined gates
+
+    payloadnext = Glo.NetOutQ.payloadWriting + 1;
+    if (payloadnext >= NetQueueLen)
+        payloadnext = 0;
+
+    if (payloadnext == Glo.NetOutQ.payloadReading) {
+        // Queue is full
+        GateSwi_leave(gateSwi3, gateKey);
+        enqueueMessage("-print Network Queue Overflow");
+        return;
+    }
+
+    // Copy the entire command plus binary data into the queue.
+    // The reference code does: strlen(StrBuffPTR) + binaryCount + 1
+    // Ensure that StrBuffPTR points to the start of the "-netudp ..." string.
+    // binaryCount is the number of binary bytes appended at the end of the string.
+    memcpy(Glo.NetOutQ.payloads[Glo.NetOutQ.payloadWriting],
+           StrBuffPTR,
+           strlen(StrBuffPTR) + binaryCount + 1);
+
+    Glo.NetOutQ.binaryCount[Glo.NetOutQ.payloadWriting] = binaryCount;
+    Glo.NetOutQ.payloadWriting = payloadnext;
+
+    GateSwi_leave(gateSwi3, gateKey);
+
+    // Post the semaphore to signal a network task that new data is available
+    Semaphore_post(semaphore2); // Use the semaphore chosen for network operations
+}
+

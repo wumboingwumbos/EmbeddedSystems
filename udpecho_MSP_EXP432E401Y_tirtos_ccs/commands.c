@@ -59,6 +59,8 @@ void process_command(const char* input) {
         MPstream(input);
     }else if (matchsub("-audio",input)==true){
         MPaudio(input);
+    }else if (matchsub("-netudp",input)==true){
+        MPNetUDP(input,0);
     }
 
     // Error if doesn't match commands

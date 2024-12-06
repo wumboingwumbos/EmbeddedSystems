@@ -1,44 +1,9 @@
-/*
- * Copyright (c) 2015-2019, Texas Instruments Incorporated
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * *  Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * *  Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * *  Neither the name of Texas Instruments Incorporated nor the names of
- *    its contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/*
- *    ======== udpEcho.c ========
- *    Contains BSD sockets code.
- */
 #include "ph001.h"
 
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <pthread.h>
 /* BSD support */
@@ -50,59 +15,52 @@
 
 #include <ti/net/slnetutils.h>
 
-//#include <ti/display/Display.h>
-
 #define UDPPACKETSIZE 1472
 #define MAXPORTLEN    6
-
-//extern Display_Handle display;
+#define DEFAULT_PORT  1000  // Define a default port if none provided
 
 extern void fdOpenSession();
 extern void fdCloseSession();
 extern void *TaskSelf();
 
-/*
- *  ======== echoFxn ========
- *  Echoes UDP messages.
- *
- */
 void *echoFxn(void *arg0)
 {
-    char message[128];
-    size_t buffer_size;
     int                bytesRcvd;
     int                bytesSent;
     int                status;
     int                server = -1;
     fd_set             readSet;
     struct addrinfo    hints;
-    struct addrinfo    *res, *p;
+    struct addrinfo    *res = NULL, *p;
     struct sockaddr_in clientAddr;
     socklen_t          addrlen;
     char               buffer[UDPPACKETSIZE];
     char               portNumber[MAXPORTLEN];
+    char               message[128];
 
     fdOpenSession(TaskSelf());
 
-//    Display_printf(display, 0, 0, "UDP Echo example started\n");
-    sprintf(message, "UDP Echo example Started");
-    UART_write(uart, message, strlen(message));
+    // If arg0 is provided as a port number pointer, use it. Otherwise, use default.
+    uint16_t listenPort = (arg0) ? *((uint16_t *)arg0) : DEFAULT_PORT;
+    snprintf(portNumber, sizeof(portNumber), "%d", listenPort);
+
+    snprintf(message, sizeof(message), "-print UDP Echo started on port %s\r\n", portNumber);
+    enqueueMessage(message);
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags    = AI_PASSIVE;
 
-    /* Obtain addresses suitable for binding to */
+    // Resolve address/port for binding
     status = getaddrinfo(NULL, portNumber, &hints, &res);
     if (status != 0) {
-//        Display_printf(display, 0, 0, "Error: getaddrinfo() failed: %s\n",
-//            gai_strerror(status));
-        sprintf(message, "Error: getaddrinfo() failed: %s\n",gai_strerror(status));
-        UART_write(uart, message, strlen(message));
+        snprintf(message, sizeof(message), "-print Error: getaddrinfo failed: %s\r\n", gai_strerror(status));
+        enqueueMessage(message);
         goto shutdown;
     }
 
+    // Attempt to create and bind socket
     for (p = res; p != NULL; p = p->ai_next) {
         server = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if (server == -1) {
@@ -111,53 +69,63 @@ void *echoFxn(void *arg0)
 
         status = bind(server, p->ai_addr, p->ai_addrlen);
         if (status != -1) {
-            break;
+            break; // successfully bound
         }
 
         close(server);
     }
 
     if (server == -1) {
-//        Display_printf(display, 0, 0, "Error: socket not created.\n");
-        sprintf(message, "Error: socket not created\r\n");
-        UART_write(uart, message, strlen(message));
+        enqueueMessage("-print Error: socket not created\r\n");
         goto shutdown;
     } else if (p == NULL) {
-//        Display_printf(display, 0, 0, "Error: bind failed.\n");
+        enqueueMessage("-print Error: bind failed\r\n");
         goto shutdown;
     } else {
         freeaddrinfo(res);
         res = NULL;
     }
 
-    do {
-        /*
-         *  readSet and addrlen are value-result arguments, which must be reset
-         *  in between each select() and recvfrom() call
-         */
+    // Ready to listen for incoming packets
+    while (1) {
         FD_ZERO(&readSet);
         FD_SET(server, &readSet);
         addrlen = sizeof(clientAddr);
 
-        /* Wait forever for the reply */
+        // Wait for incoming UDP packet
         status = select(server + 1, &readSet, NULL, NULL, NULL);
-        if (status > 0) {
-            if (FD_ISSET(server, &readSet)) {
-                bytesRcvd = recvfrom(server, buffer, UDPPACKETSIZE, 0,
-                        (struct sockaddr *)&clientAddr, &addrlen);
+        if (status > 0 && FD_ISSET(server, &readSet)) {
+            bytesRcvd = (int)recvfrom(server, buffer, UDPPACKETSIZE, 0, (struct sockaddr *)&clientAddr, &addrlen);
 
-                if (bytesRcvd > 0) {
-                    bytesSent = sendto(server, buffer, bytesRcvd, 0,
-                            (struct sockaddr *)&clientAddr, addrlen);
-                    if (bytesSent < 0 || bytesSent != bytesRcvd) {
-//                        Display_printf(display, 0, 0,
-//                                "Error: sendto failed.\n");
-                        goto shutdown;
-                    }
+            if (bytesRcvd > 0) {
+                buffer[bytesRcvd] = '\0'; // Null-terminate the received data
+
+                // Here’s where you adapt what you do with the received data.
+                // Option A: Echo back the data (original behavior)
+                bytesSent = (int)sendto(server, buffer, bytesRcvd, 0, (struct sockaddr *)&clientAddr, addrlen);
+                if (bytesSent < 0 || bytesSent != bytesRcvd) {
+                    enqueueMessage("-print Error: sendto failed\r\n");
+                    // Decide whether to break or continue
+                    // break; // if you want to stop on error
                 }
+
+                // Option B: Process locally:
+                // enqueueMessage(buffer); // Add received message to your local queue
+
+                // If you detect special commands like "-voice" or "-netudp", you could parse them here:
+                // if (matchsub("-voice", buffer)) {
+                //     VoiceParse(buffer);
+                // }
+                // else {
+                //     enqueueMessage(buffer);
+                // }
             }
+        } else if (status < 0) {
+            enqueueMessage("-print Error: select() failed\r\n");
+            // Decide whether to break or continue
+            // break;
         }
-    } while (status > 0);
+    }
 
 shutdown:
     if (res) {

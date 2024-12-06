@@ -200,32 +200,65 @@ void ADCStream() {
     int32_t hdrlen;
     bool local = true;
 
-    while(1){
+    while(1) {
         Semaphore_pend(semaphore1, BIOS_WAIT_FOREVER);
 
-        if(Glo.ADCBufCtrl.RX_Completed == Glo.ADCBufCtrl.RX_Ping){
+        if (Glo.ADCBufCtrl.RX_Completed == Glo.ADCBufCtrl.RX_Ping) {
             source = Glo.ADCBufCtrl.RX_Completed;
             dest_choice = 0;
             Glo.ADCBufCtrl.ping_count++;
-        }
-        else if(Glo.ADCBufCtrl.RX_Completed == Glo.ADCBufCtrl.RX_Pong){
+        } else if (Glo.ADCBufCtrl.RX_Completed == Glo.ADCBufCtrl.RX_Pong) {
             source = Glo.ADCBufCtrl.RX_Completed;
             dest_choice = 1;
             Glo.ADCBufCtrl.pong_count++;
-        }
-        else{
+        } else {
             enqueueMessage("-print RX_Ping and RX_Pong not completed, lost pointer");
             return;
         }
-        //Eventually add net packaging here
 
-        if(local == true){
+        local = true; // Reset local flag for each iteration
+
+        // Network Packaging if REG_DIAL1 is set
+        if (Glo.regs[REG_DIAL1].value != 0) {
+            uint32_t dial1 = (uint32_t)Glo.regs[REG_DIAL1].value;
+            sprintf(longload, "-netudp %d.%d.%d.%d:%d -voice %d 128  ",
+                    (uint8_t)((dial1 >> 24) & 0xFF),
+                    (uint8_t)((dial1 >> 16) & 0xFF),
+                    (uint8_t)((dial1 >> 8) & 0xFF),
+                    (uint8_t)(dial1 & 0xFF),
+                    DEFAULTPORT, dest_choice);
+
+            hdrlen = (int32_t)strlen(longload) + 1; // space for null terminator
+            memcpy(&longload[hdrlen], source, sizeof(uint16_t)*DATABLOCKSIZE);
+
+            // Parse for network (UDP)
+            MPNetUDP(longload, sizeof(uint16_t)*DATABLOCKSIZE);
+            local = false;
+        }
+
+        // Network Packaging if REG_DIAL2 is set
+        if (Glo.regs[REG_DIAL2].value != 0) {
+            uint32_t dial2 = (uint32_t)Glo.regs[REG_DIAL2].value;
+            sprintf(longload, "-netudp %d.%d.%d.%d:%d -voice %d 128  ",
+                    (uint8_t)((dial2 >> 24) & 0xFF),
+                    (uint8_t)((dial2 >> 16) & 0xFF),
+                    (uint8_t)((dial2 >> 8) & 0xFF),
+                    (uint8_t)(dial2 & 0xFF),
+                    DEFAULTPORT, dest_choice + 2);
+
+            hdrlen = (int32_t)strlen(longload) + 1; // space for null terminator
+            memcpy(&longload[hdrlen], source, sizeof(uint16_t)*DATABLOCKSIZE);
+
+            // Parse for network (UDP)
+            MPNetUDP(longload, sizeof(uint16_t)*DATABLOCKSIZE);
+            local = false;
+        }
+
+        if (local == true) {
             sprintf(longload, "-voice %d 128  ", dest_choice);
-            hdrlen = strlen(longload)+1;
+            hdrlen = (int32_t)strlen(longload) + 1;
             memcpy(&longload[hdrlen], source, sizeof(uint16_t)*DATABLOCKSIZE);
             VoiceParse(longload);
         }
     }
 }
-
-//

@@ -175,6 +175,6 @@ void serviceReport(uint32_t item, uint32_t status, uint32_t report, void *h)
 //                "DHCP Client initialization failed; check your network.\n");
         sprintf(message, "DHCP Client Initialization failed: Check your network\r\n");
         UART_write(uart, message, strlen(message));
-        while (1);
+        //while (1);
     }
 }

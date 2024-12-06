@@ -134,6 +134,12 @@ typedef struct NetOutQ{
 typedef struct Discoveries{
     uint32_t IP_address;
 } Discoveries;
+#define reg_count 32
+
+typedef struct{
+    int32_t value;
+} Register;
+
 /* Structure for Globals */
 typedef struct {
     //about glos
@@ -171,18 +177,14 @@ typedef struct {
     Discoveries   Discoveries[32];
     uint32_t      Multicast;
     int32_t       GlobTail;
+    Register regs[reg_count];  // 32 signed registers
 } Globals;
 typedef struct{
     int count;
     char cbpayload[320];
 }Callback;
 
-#define reg_count 32
 
-typedef struct{
-    int32_t value;
-} Register;
-Register regs[reg_count];  // 32 signed registers
 
 Callback callbacks[MAX_CALLBACKS];
 #define BUFFER_SIZE 1024
