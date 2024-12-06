@@ -1,2 +1,3 @@
-2024/12/06-00:11:11.569 c4dc Creating DB C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\shared_proto_db\metadata since it was missing.
-2024/12/06-00:11:11.578 c4dc Reusing MANIFEST C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\shared_proto_db\metadata/MANIFEST-000001
+2024/12/06-00:38:50.481 2e90 Reusing MANIFEST C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\shared_proto_db\metadata/MANIFEST-000001
+2024/12/06-00:38:50.481 2e90 Recovering log #3
+2024/12/06-00:38:50.481 2e90 Reusing old log C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\shared_proto_db\metadata/000003.log 

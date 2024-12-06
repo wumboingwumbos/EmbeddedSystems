@@ -1,2 +1,3 @@
-2024/12/06-00:11:11.615 ad04 Creating DB C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\Local Storage\leveldb since it was missing.
-2024/12/06-00:11:11.618 ad04 Reusing MANIFEST C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\Local Storage\leveldb/MANIFEST-000001
+2024/12/06-00:38:50.554 6fd0 Reusing MANIFEST C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\Local Storage\leveldb/MANIFEST-000001
+2024/12/06-00:38:50.554 6fd0 Recovering log #3
+2024/12/06-00:38:50.555 6fd0 Reusing old log C:\Users\OtherUser\Desktop\HW11\.jxbrowser.userdata\Default\Local Storage\leveldb/000003.log 

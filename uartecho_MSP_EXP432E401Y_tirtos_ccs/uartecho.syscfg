@@ -28,6 +28,11 @@ const Timer2  = Timer.addInstance();
 const UART    = scripting.addModule("/ti/drivers/UART");
 const UART1   = UART.addInstance();
 const UART2   = UART.addInstance();
+const General = scripting.addModule("/ti/ndk/General");
+const NIMU    = scripting.addModule("/ti/ndk/NIMU", {}, false);
+const NIMU1   = NIMU.addInstance();
+const SlNet   = scripting.addModule("/ti/net/SlNet", {}, false);
+const SlNet1  = SlNet.addInstance();
 
 /**
  * Write custom configuration values to the imported modules.
@@ -100,6 +105,24 @@ UART2.ringBufferSize    = 128;
 UART2.interruptPriority = "5";
 UART2.uart.$assign      = "UART7";
 
+General.tcpTxBufSize          = 1024;
+General.tcpRxBufSize          = 1024;
+General.tcpRxBufLimit         = 2048;
+General.udpRxBufSize          = 2048;
+General.ndkThreadStkSize      = 2048;
+General.lowPriTaskDefStkSize  = 2048;
+General.normPriTaskDefStkSize = 2048;
+General.highPriTaskDefStkSize = 2048;
+General.networkIPAddrHook     = "netIPAddrHook";
+
+NIMU1.$name              = "CONFIG_NIMU_0";
+NIMU1.dhcpcServReportFxn = "serviceReport";
+NIMU1.emac.$name         = "CONFIG_EMAC_0";
+
+SlNet1.$name             = "CONFIG_SLNET_0";
+SlNet1.id                = 2;
+SlNet1.enableSecureSocks = false;
+
 /**
  * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
@@ -117,3 +140,6 @@ UART1.uart.txPin.$suggestSolution              = "expansion.76";
 UART1.uart.rxPin.$suggestSolution              = "expansion.74";
 UART2.uart.txPin.$suggestSolution              = "boosterpack.4";
 UART2.uart.rxPin.$suggestSolution              = "boosterpack.3";
+NIMU1.emac.emac.$suggestSolution               = "ETHERNET0";
+NIMU1.emac.emac.led0Pin.$suggestSolution       = "boosterpack2.39";
+NIMU1.emac.emac.led1Pin.$suggestSolution       = "boosterpack2.32";
